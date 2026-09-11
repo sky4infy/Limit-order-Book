@@ -1,0 +1,19 @@
+# Build outputs
+bin/
+build/
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.lib
+
+# IDE & Editor caches
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Python cache
+__pycache__/
+*.pyc
