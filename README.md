@@ -84,10 +84,7 @@ Limit-order-Book/
 ├── benchmark/
 │   └── BaselineBenchmark.cpp           # Hardware RDTSC latency & throughput profiler
 ├── build.bat                           # One-click MSVC C++20 build, test & benchmark runner
-├── CMakeLists.txt                      # Cross-platform CMake C++20 build configuration
-├── PHASED_BUILD_PLAN_AND_INTERVIEW_DEFENSE.md # Technical interview strategy & defense cheatsheet
-├── WEEK_1_CODE_WALKTHROUGH_AND_ARCHITECTURE.md # Exhaustive code & function walkthrough
-└── ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md # 10-week low-latency systems & quant syllabus
+└── CMakeLists.txt                      # Cross-platform CMake C++20 build configuration
 ```
 
 ---
@@ -129,13 +126,6 @@ All 6 core exchange invariants are verified with 100% assertion pass rates:
 * `test_multi_level_price_sweep`: Large orders sweep across multiple price levels.
 * `test_fifo_time_priority`: Strict timestamp priority execution for identical price levels.
 * `test_order_cancellation`: O(1) order cancellation and price level pruning.
-
----
-
-## 📚 Technical Documentation & Blueprints
-* [Week 1 Complete Code Walkthrough](WEEK_1_CODE_WALKTHROUGH_AND_ARCHITECTURE.md)
-* [Phased Build Plan & Interview Defense Guide](PHASED_BUILD_PLAN_AND_INTERVIEW_DEFENSE.md)
-* [Zero-to-Hero 10-Week Learning Syllabus](ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md)
 
 ---
 

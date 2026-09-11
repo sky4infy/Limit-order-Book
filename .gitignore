@@ -14,6 +14,15 @@ build/
 *.suo
 *.user
 
-# Python cache
+# Python scripts & caches
 __pycache__/
 *.pyc
+*.py
+
+# Generated PDFs & binary documents
+*.pdf
+
+# Internal study notes, build plans & interview defense guides
+PHASED_BUILD_PLAN_AND_INTERVIEW_DEFENSE.md
+ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md
+WEEK_1_CODE_WALKTHROUGH_AND_ARCHITECTURE.md
