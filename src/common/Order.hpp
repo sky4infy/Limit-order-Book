@@ -5,15 +5,13 @@
 
 namespace lob {
 
-// Baseline Order Struct:
-// Represents an individual order submitted by a market participant.
 struct Order {
-    OrderId   order_id;         // Unique order ID
-    Side      side;             // BUY or SELL
-    Price     price;            // Fixed-point price ticks
-    Quantity  quantity;         // Current open/remaining quantity
-    Quantity  initial_quantity; // Original submitted quantity
-    Timestamp timestamp;        // Priority timestamp
+    OrderId   order_id;
+    Side      side;
+    Price     price;
+    Quantity  quantity;
+    Quantity  initial_quantity;
+    Timestamp timestamp;
 
     Order(OrderId id, Side s, Price p, Quantity qty, Timestamp ts = 0)
         : order_id(id), side(s), price(p), quantity(qty), initial_quantity(qty), timestamp(ts) {}

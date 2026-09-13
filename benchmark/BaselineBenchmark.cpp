@@ -14,15 +14,12 @@
 
 using namespace lob;
 
-// Estimate CPU frequency to convert RDTSC cycles to nanoseconds
 double estimate_tsc_frequency_ghz() {
     auto start_time = std::chrono::steady_clock::now();
     uint64_t start_cycles = __rdtsc();
 
-    // Busy wait for ~50 milliseconds
     while (std::chrono::duration_cast<std::chrono::milliseconds>(
                std::chrono::steady_clock::now() - start_time).count() < 50) {
-        // spin
     }
 
     auto end_time = std::chrono::steady_clock::now();
@@ -31,12 +28,12 @@ double estimate_tsc_frequency_ghz() {
     auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
     uint64_t elapsed_cycles = end_cycles - start_cycles;
 
-    return (double)elapsed_cycles / (double)elapsed_ns; // cycles per nanosecond (GHz)
+    return (double)elapsed_cycles / (double)elapsed_ns;
 }
 
 int main() {
     std::cout << "========================================================\n";
-    std::cout << "  WEEK 1: BASELINE LATENCY & THROUGHPUT BENCHMARK       \n";
+    std::cout << "        BASELINE LATENCY & THROUGHPUT BENCHMARK         \n";
     std::cout << "========================================================\n";
 
     double ghz = estimate_tsc_frequency_ghz();
@@ -46,13 +43,11 @@ int main() {
     const size_t NUM_ORDERS = 100000;
     std::cout << "[INFO] Generating " << NUM_ORDERS << " synthetic order workload...\n";
 
-    // Seeded generator for reproducible benchmarks
     std::mt19937 rng(42);
-    std::uniform_int_distribution<uint64_t> price_dist(9900, 10100); // $99.00 to $101.00
+    std::uniform_int_distribution<uint64_t> price_dist(9900, 10100);
     std::uniform_int_distribution<uint32_t> qty_dist(10, 500);
     std::uniform_int_distribution<int> side_dist(0, 1);
 
-    // Pre-generate orders in memory so random generation is not counted in matching latency
     std::vector<Order> test_orders;
     test_orders.reserve(NUM_ORDERS);
 
@@ -86,7 +81,6 @@ int main() {
     auto benchmark_end = std::chrono::high_resolution_clock::now();
     auto total_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(benchmark_end - benchmark_start).count();
 
-    // Sort latencies to compute percentiles
     std::sort(latencies_ns.begin(), latencies_ns.end());
 
     double p50 = latencies_ns[size_t(NUM_ORDERS * 0.50)];
@@ -110,11 +104,6 @@ int main() {
     std::cout << "    p99.9          : " << std::setw(8) << std::fixed << std::setprecision(1) << p999 << " ns (" << p999 / 1000.0 << " us)\n";
     std::cout << "    Max (Outlier)  : " << std::setw(8) << std::fixed << std::setprecision(1) << max_lat << " ns (" << max_lat / 1000.0 << " us)\n";
     std::cout << "========================================================\n\n";
-
-    std::cout << ">>> INTERVIEW TAKEAWAY:\n";
-    std::cout << "Notice how the p99/p99.9 latencies spike significantly above p50!\n";
-    std::cout << "In Phase 2, we will replace std::map and std::list with a Slab Allocator\n";
-    std::cout << "and Direct Array to eliminate heap jitter and crush this tail latency.\n\n";
 
     return 0;
 }

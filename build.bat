@@ -39,5 +39,5 @@ echo [4/4] Running Benchmark (100,000 Orders)...
 bin\BaselineBenchmark.exe
 
 echo ===================================================================
-echo   WEEK 1 BASELINE BUILD AND VERIFICATION COMPLETE!
+echo   BASELINE BUILD AND VERIFICATION COMPLETE!
 echo ===================================================================

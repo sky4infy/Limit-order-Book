@@ -19,27 +19,21 @@ std::vector<Trade> OrderBookBaseline::add_order(Order order) {
 std::vector<Trade> OrderBookBaseline::match_buy_order(Order& incoming_buy) {
     std::vector<Trade> trades;
 
-    // Loop while the incoming buy order has open quantity AND there are resting asks in the book
     while (incoming_buy.quantity > 0 && !asks_.empty()) {
         auto best_ask_it = asks_.begin();
         Price best_ask_price = best_ask_it->first;
 
-        // Price check: If the buyer's limit price is strictly LESS than the lowest seller price,
-        // no match can occur. The spread is not crossed.
         if (incoming_buy.price < best_ask_price) {
             break;
         }
 
-        // We have a match! Access the FIFO queue of resting sell orders at this price
         auto& resting_queue = best_ask_it->second;
 
         while (incoming_buy.quantity > 0 && !resting_queue.empty()) {
             Order& resting_ask = resting_queue.front();
 
-            // Matched quantity is the minimum of what buyer wants and what seller offers
             Quantity fill_qty = std::min(incoming_buy.quantity, resting_ask.quantity);
 
-            // In continuous trading, execution price is always set by the resting maker order!
             trades.push_back(Trade{
                 .maker_order_id = resting_ask.order_id,
                 .taker_order_id = incoming_buy.order_id,
@@ -48,24 +42,20 @@ std::vector<Trade> OrderBookBaseline::match_buy_order(Order& incoming_buy) {
                 .timestamp = incoming_buy.timestamp
             });
 
-            // Decrement remaining quantities
             incoming_buy.quantity -= fill_qty;
             resting_ask.quantity -= fill_qty;
 
-            // If the resting ask is completely filled, remove it from the queue & index
             if (resting_ask.is_filled()) {
                 order_index_.erase(resting_ask.order_id);
                 resting_queue.pop_front();
             }
         }
 
-        // If all resting orders at this price level are consumed, remove the price level
         if (resting_queue.empty()) {
             asks_.erase(best_ask_it);
         }
     }
 
-    // Passive Resting: If incoming buy order still has open quantity, insert it into the bid book
     if (incoming_buy.quantity > 0) {
         bids_[incoming_buy.price].push_back(incoming_buy);
         order_index_[incoming_buy.order_id] = {Side::BUY, incoming_buy.price};
@@ -77,18 +67,14 @@ std::vector<Trade> OrderBookBaseline::match_buy_order(Order& incoming_buy) {
 std::vector<Trade> OrderBookBaseline::match_sell_order(Order& incoming_sell) {
     std::vector<Trade> trades;
 
-    // Loop while incoming sell order has open quantity AND there are resting bids in the book
     while (incoming_sell.quantity > 0 && !bids_.empty()) {
         auto best_bid_it = bids_.begin();
         Price best_bid_price = best_bid_it->first;
 
-        // Price check: If the seller's limit price is strictly GREATER than the highest buyer price,
-        // no match can occur. The spread is not crossed.
         if (incoming_sell.price > best_bid_price) {
             break;
         }
 
-        // Match! Access the FIFO queue of resting buy orders at this price
         auto& resting_queue = best_bid_it->second;
 
         while (incoming_sell.quantity > 0 && !resting_queue.empty()) {
@@ -118,7 +104,6 @@ std::vector<Trade> OrderBookBaseline::match_sell_order(Order& incoming_sell) {
         }
     }
 
-    // Passive Resting: Insert leftover sell quantity into the ask book
     if (incoming_sell.quantity > 0) {
         asks_[incoming_sell.price].push_back(incoming_sell);
         order_index_[incoming_sell.order_id] = {Side::SELL, incoming_sell.price};
@@ -130,7 +115,7 @@ std::vector<Trade> OrderBookBaseline::match_sell_order(Order& incoming_sell) {
 bool OrderBookBaseline::cancel_order(OrderId order_id) {
     auto it = order_index_.find(order_id);
     if (it == order_index_.end()) {
-        return false; // Order not found or already filled
+        return false;
     }
 
     Side side = it->second.first;
@@ -216,7 +201,6 @@ void OrderBookBaseline::print_book(size_t depth) const {
     std::cout << "----------------------------------------------------\n";
     std::cout << std::setw(12) << "Price ($)" << std::setw(12) << "Shares" << std::setw(12) << "Orders" << "\n";
 
-    // Print Asks in reverse so lowest ask is closest to spread
     std::vector<std::pair<Price, const std::list<Order>*>> top_asks;
     size_t count = 0;
     for (auto it = asks_.begin(); it != asks_.end() && count < depth; ++it, ++count) {
@@ -230,7 +214,6 @@ void OrderBookBaseline::print_book(size_t depth) const {
                   << " " << std::setw(11) << it->second->size() << "\n";
     }
 
-    // Spread Indicator
     auto bb = get_best_bid();
     auto ba = get_best_ask();
     std::cout << "----------------------------------------------------\n";
