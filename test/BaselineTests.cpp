@@ -120,6 +120,108 @@ void test_order_cancellation() {
     std::cout << "  -> PASSED\n";
 }
 
+void test_order_amendment_fifo_priority() {
+    std::cout << "[TEST] Running test_order_amendment_fifo_priority...\n";
+    OrderBookBaseline book;
+
+    // Place two buy orders at identical price: Order 1 (100 qty), Order 2 (100 qty)
+    book.add_order(Order(1, Side::BUY, 10000, 100));
+    book.add_order(Order(2, Side::BUY, 10000, 100));
+    assert(book.get_volume_at_price(Side::BUY, 10000) == 200);
+
+    // Case 1: Quantity reduction must RETAIN FIFO priority
+    bool modified = book.modify_order(1, 40);
+    assert(modified == true);
+    assert(book.get_volume_at_price(Side::BUY, 10000) == 140);
+    auto ord1 = book.get_order(1);
+    assert(ord1.has_value() && ord1->quantity == 40);
+
+    // Incoming sell order for 50 shares
+    // Order 1 should fill completely (40 shares) because it maintained queue priority,
+    // and Order 2 should fill 10 shares, leaving 90 shares.
+    auto trades = book.add_order(Order(10, Side::SELL, 10000, 50));
+    assert(trades.size() == 2);
+    assert(trades[0].maker_order_id == 1 && trades[0].quantity == 40);
+    assert(trades[1].maker_order_id == 2 && trades[1].quantity == 10);
+    assert(!book.has_order(1));
+    assert(book.has_order(2));
+    assert(book.get_volume_at_price(Side::BUY, 10000) == 90);
+
+    // Case 2: Quantity increase must LOSE FIFO priority and move to queue tail
+    book.add_order(Order(3, Side::BUY, 10000, 100));
+    // Now at price 10000: Order 2 has 90, Order 3 has 100
+    // Increasing Order 2 quantity from 90 to 120 pushes it behind Order 3!
+    modified = book.modify_order(2, 120);
+    assert(modified == true);
+    assert(book.get_volume_at_price(Side::BUY, 10000) == 220);
+
+    // Incoming sell order for 100 shares.
+    // Order 3 must be matched first (100 shares) since Order 2 lost priority to tail!
+    trades = book.add_order(Order(20, Side::SELL, 10000, 100));
+    assert(trades.size() == 1);
+    assert(trades[0].maker_order_id == 3 && trades[0].quantity == 100);
+    assert(!book.has_order(3));
+    assert(book.has_order(2));
+    assert(book.get_volume_at_price(Side::BUY, 10000) == 120);
+
+    // Case 3: Modifying quantity to 0 cancels the order
+    modified = book.modify_order(2, 0);
+    assert(modified == true);
+    assert(!book.has_order(2));
+    assert(book.is_empty());
+
+    // Case 4: Non-existent order returns false
+    assert(book.modify_order(999, 100) == false);
+
+    std::cout << "  -> PASSED\n";
+}
+
+void test_market_statistics_and_depth() {
+    std::cout << "[TEST] Running test_market_statistics_and_depth...\n";
+    OrderBookBaseline book;
+
+    // Empty book stats
+    assert(book.get_spread() == std::nullopt);
+    assert(book.get_mid_price() == std::nullopt);
+    assert(book.get_total_volume(Side::BUY) == 0);
+    assert(book.get_total_volume(Side::SELL) == 0);
+
+    // Add bids: 10000 (qty 100), 9990 (qty 200), 9980 (qty 300)
+    book.add_order(Order(1, Side::BUY, 10000, 100));
+    book.add_order(Order(2, Side::BUY, 9990, 120));
+    book.add_order(Order(3, Side::BUY, 9990, 80));
+    book.add_order(Order(4, Side::BUY, 9980, 300));
+
+    // Add asks: 10050 (qty 150), 10100 (qty 250)
+    book.add_order(Order(5, Side::SELL, 10050, 150));
+    book.add_order(Order(6, Side::SELL, 10100, 250));
+
+    // Spread & Mid-price
+    // Best Bid: 10000 ($100.00), Best Ask: 10050 ($100.50) -> Spread: 50 ($0.50)
+    auto spread = book.get_spread();
+    assert(spread.has_value() && *spread == 50);
+
+    auto mid = book.get_mid_price();
+    assert(mid.has_value() && *mid == 10025.0);
+
+    // Total volumes
+    assert(book.get_total_volume(Side::BUY) == 600);
+    assert(book.get_total_volume(Side::SELL) == 400);
+
+    // L2 Depth snapshot
+    auto buy_depth = book.get_level_depth(Side::BUY, 2);
+    assert(buy_depth.size() == 2);
+    assert(buy_depth[0].price == 10000 && buy_depth[0].volume == 100 && buy_depth[0].order_count == 1);
+    assert(buy_depth[1].price == 9990 && buy_depth[1].volume == 200 && buy_depth[1].order_count == 2);
+
+    auto sell_depth = book.get_level_depth(Side::SELL, 5);
+    assert(sell_depth.size() == 2);
+    assert(sell_depth[0].price == 10050 && sell_depth[0].volume == 150 && sell_depth[0].order_count == 1);
+    assert(sell_depth[1].price == 10100 && sell_depth[1].volume == 250 && sell_depth[1].order_count == 1);
+
+    std::cout << "  -> PASSED\n";
+}
+
 int main() {
     std::cout << "===============================================\n";
     std::cout << "       LOB BASELINE CORRECTNESS TESTS          \n";
@@ -131,6 +233,8 @@ int main() {
     test_multi_level_price_sweep();
     test_fifo_time_priority();
     test_order_cancellation();
+    test_order_amendment_fifo_priority();
+    test_market_statistics_and_depth();
 
     std::cout << "\nAll unit tests passed successfully.\n\n";
 

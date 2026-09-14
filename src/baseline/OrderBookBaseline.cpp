@@ -155,6 +155,87 @@ bool OrderBookBaseline::cancel_order(OrderId order_id) {
     return false;
 }
 
+bool OrderBookBaseline::modify_order(OrderId order_id, Quantity new_quantity) {
+    if (new_quantity == 0) {
+        return cancel_order(order_id);
+    }
+
+    auto it = order_index_.find(order_id);
+    if (it == order_index_.end()) {
+        return false;
+    }
+
+    Side side = it->second.first;
+    Price price = it->second.second;
+
+    auto update_queue = [&](auto& book_map) -> bool {
+        auto map_it = book_map.find(price);
+        if (map_it == book_map.end()) {
+            return false;
+        }
+
+        auto& queue = map_it->second;
+        for (auto q_it = queue.begin(); q_it != queue.end(); ++q_it) {
+            if (q_it->order_id == order_id) {
+                if (new_quantity <= q_it->quantity) {
+                    // Size reduction preserves time priority in queue
+                    q_it->quantity = new_quantity;
+                } else {
+                    // Size increase loses time priority, moved to queue tail
+                    Order updated_order = *q_it;
+                    updated_order.quantity = new_quantity;
+                    queue.erase(q_it);
+                    queue.push_back(updated_order);
+                }
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (side == Side::BUY) {
+        return update_queue(bids_);
+    } else {
+        return update_queue(asks_);
+    }
+}
+
+bool OrderBookBaseline::has_order(OrderId order_id) const {
+    return order_index_.find(order_id) != order_index_.end();
+}
+
+std::optional<Order> OrderBookBaseline::get_order(OrderId order_id) const {
+    auto it = order_index_.find(order_id);
+    if (it == order_index_.end()) {
+        return std::nullopt;
+    }
+
+    Side side = it->second.first;
+    Price price = it->second.second;
+
+    if (side == Side::BUY) {
+        auto map_it = bids_.find(price);
+        if (map_it != bids_.end()) {
+            for (const auto& ord : map_it->second) {
+                if (ord.order_id == order_id) {
+                    return ord;
+                }
+            }
+        }
+    } else {
+        auto map_it = asks_.find(price);
+        if (map_it != asks_.end()) {
+            for (const auto& ord : map_it->second) {
+                if (ord.order_id == order_id) {
+                    return ord;
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<Price> OrderBookBaseline::get_best_bid() const {
     if (bids_.empty()) {
         return std::nullopt;
@@ -167,6 +248,24 @@ std::optional<Price> OrderBookBaseline::get_best_ask() const {
         return std::nullopt;
     }
     return asks_.begin()->first;
+}
+
+std::optional<Price> OrderBookBaseline::get_spread() const {
+    auto bb = get_best_bid();
+    auto ba = get_best_ask();
+    if (bb && ba && *ba >= *bb) {
+        return *ba - *bb;
+    }
+    return std::nullopt;
+}
+
+std::optional<double> OrderBookBaseline::get_mid_price() const {
+    auto bb = get_best_bid();
+    auto ba = get_best_ask();
+    if (bb && ba) {
+        return (static_cast<double>(*bb) + static_cast<double>(*ba)) / 2.0;
+    }
+    return std::nullopt;
 }
 
 Quantity OrderBookBaseline::get_volume_at_price(Side side, Price price) const {
@@ -187,6 +286,58 @@ Quantity OrderBookBaseline::get_volume_at_price(Side side, Price price) const {
         }
     }
     return total;
+}
+
+Quantity OrderBookBaseline::get_total_volume(Side side) const {
+    Quantity total = 0;
+    if (side == Side::BUY) {
+        for (const auto& [price, queue] : bids_) {
+            for (const auto& ord : queue) {
+                total += ord.quantity;
+            }
+        }
+    } else {
+        for (const auto& [price, queue] : asks_) {
+            for (const auto& ord : queue) {
+                total += ord.quantity;
+            }
+        }
+    }
+    return total;
+}
+
+std::vector<LevelInfo> OrderBookBaseline::get_level_depth(Side side, size_t max_depth) const {
+    std::vector<LevelInfo> levels;
+    if (side == Side::BUY) {
+        levels.reserve(std::min(max_depth, bids_.size()));
+        size_t count = 0;
+        for (auto it = bids_.begin(); it != bids_.end() && count < max_depth; ++it, ++count) {
+            Quantity vol = 0;
+            for (const auto& ord : it->second) {
+                vol += ord.quantity;
+            }
+            levels.push_back(LevelInfo{
+                .price = it->first,
+                .volume = vol,
+                .order_count = it->second.size()
+            });
+        }
+    } else {
+        levels.reserve(std::min(max_depth, asks_.size()));
+        size_t count = 0;
+        for (auto it = asks_.begin(); it != asks_.end() && count < max_depth; ++it, ++count) {
+            Quantity vol = 0;
+            for (const auto& ord : it->second) {
+                vol += ord.quantity;
+            }
+            levels.push_back(LevelInfo{
+                .price = it->first,
+                .volume = vol,
+                .order_count = it->second.size()
+            });
+        }
+    }
+    return levels;
 }
 
 void OrderBookBaseline::clear() {

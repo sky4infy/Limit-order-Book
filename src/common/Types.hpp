@@ -35,4 +35,10 @@ struct Trade {
     }
 };
 
+struct LevelInfo {
+    Price price;
+    Quantity volume;
+    size_t order_count;
+};
+
 } // namespace lob

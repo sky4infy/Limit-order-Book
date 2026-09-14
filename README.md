@@ -10,7 +10,8 @@ This project implements a continuous double-auction Limit Order Book (LOB) match
 
 ### Core Features
 * **FIFO Price-Time Matching:** Ensures orders resting at the same price level are executed in strict chronological order of arrival.
-* **Order Management:** Supports Limit Orders, Market crossings (spread execution), partial fills, multi-level sweeps, and order cancellations.
+* **Order Management & Amendment:** Supports Limit Orders, Market crossings, partial fills, multi-level sweeps, cancellations, and order amendments with exchange-standard priority rules (size reduction retains FIFO queue position; size increase loses priority and moves to queue tail).
+* **Level 2 Market Depth & Statistics:** Fast querying of Bid/Ask spread, mid-market price, cumulative volume, and aggregated Level 2 depth snapshots (`price`, `volume`, `order_count`).
 * **Fixed-Point Arithmetic:** Prices are stored as 64-bit unsigned integer ticks (`uint64_t`) to eliminate IEEE 754 floating-point rounding errors and precision drift.
 * **Console Depth Visualizer:** Real-time visual ladder displaying the active Bid/Ask spread, price levels, and order depth.
 * **Hardware Latency Benchmarking:** Cycle-accurate latency profiler using x86 CPU hardware timers (`__rdtsc`) measuring median and tail latency percentiles (p50, p90, p99, p99.9).

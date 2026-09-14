@@ -17,11 +17,20 @@ public:
 
     std::vector<Trade> add_order(Order order);
     bool cancel_order(OrderId order_id);
+    bool modify_order(OrderId order_id, Quantity new_quantity);
+
+    bool has_order(OrderId order_id) const;
+    std::optional<Order> get_order(OrderId order_id) const;
 
     std::optional<Price> get_best_bid() const;
     std::optional<Price> get_best_ask() const;
+    std::optional<Price> get_spread() const;
+    std::optional<double> get_mid_price() const;
 
     Quantity get_volume_at_price(Side side, Price price) const;
+    Quantity get_total_volume(Side side) const;
+    std::vector<LevelInfo> get_level_depth(Side side, size_t max_depth = 5) const;
+
     size_t total_orders_count() const { return order_index_.size(); }
     bool is_empty() const { return order_index_.empty(); }
 
