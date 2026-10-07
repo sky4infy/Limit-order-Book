@@ -1,4 +1,6 @@
-# Build outputs
+# ==============================================================================
+# BUILD & COMPILER ARTIFACTS
+# ==============================================================================
 bin/
 build/
 *.exe
@@ -7,22 +9,45 @@ build/
 *.ilk
 *.lib
 
-# IDE & Editor caches
+# ==============================================================================
+# IDE & EDITOR CACHES
+# ==============================================================================
 .vs/
 .vscode/
 .idea/
 *.suo
 *.user
 
-# Python scripts & caches
+# ==============================================================================
+# PYTHON SCRIPTS & BUILD TOOLING
+# ==============================================================================
 __pycache__/
 *.pyc
 *.py
 
-# Generated PDFs & binary documents
-*.pdf
+# ==============================================================================
+# STUDY PACKAGES, ARCHIVES & COMPRESSED FILES (FOR GOOGLE DRIVE ONLY)
+# ==============================================================================
+*.zip
+*.tar
+*.gz
+Week_1_Package/
+Week_2_Package/
+*Study_Package*
+*Package*
 
-# Internal study notes, build plans & interview defense guides
+# ==============================================================================
+# PERSONAL STUDY NOTES, WALKTHROUGHS, GUIDES & INTERVIEW DEFENSE
+# ==============================================================================
+*.pdf
+*.html
+*COURSE*
+*CURRICULUM*
+*WALKTHROUGH*
+*INTERVIEW*
+*PLAN*
+*SELF_STUDY*
+*GUIDE*
 PHASED_BUILD_PLAN_AND_INTERVIEW_DEFENSE.md
 ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md
 WEEK_1_CODE_WALKTHROUGH_AND_ARCHITECTURE.md
@@ -30,6 +55,5 @@ WEEK_2_SELF_STUDY_AND_CODE_WALKTHROUGH.md
 WEEK_2_COMPUTER_ARCHITECTURE_AND_MECHANICAL_SYMPATHY.md
 WEEK_1_INTERVIEW_PREPARATION_AND_DEFENSE.md
 WEEK_2_INTERVIEW_PREPARATION_AND_DEFENSE.md
-*INTERVIEW*
-
-
+WEEK_1_AND_WEEK_2_COMPLETE_CURRICULUM.md
+COURSE_WEEK_1_AND_2_INTERACTIVE.html
