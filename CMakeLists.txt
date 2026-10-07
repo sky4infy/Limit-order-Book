@@ -30,3 +30,12 @@ target_link_libraries(BaselineTests PRIVATE lob_baseline)
 # Baseline Benchmark Harness Executable
 add_executable(BaselineBenchmark benchmark/BaselineBenchmark.cpp)
 target_link_libraries(BaselineBenchmark PRIVATE lob_baseline)
+
+# Week 2: Memory Layout and Struct Alignment Tests
+add_executable(MemoryLayoutTests test/MemoryLayoutTests.cpp)
+target_link_libraries(MemoryLayoutTests PRIVATE lob_baseline)
+
+# Week 2: Cache Locality & Pointer Chasing Micro-Benchmark
+add_executable(CacheBenchmark benchmark/CacheBenchmark.cpp)
+target_link_libraries(CacheBenchmark PRIVATE lob_baseline)
+
