@@ -39,3 +39,28 @@ target_link_libraries(MemoryLayoutTests PRIVATE lob_baseline)
 add_executable(CacheBenchmark benchmark/CacheBenchmark.cpp)
 target_link_libraries(CacheBenchmark PRIVATE lob_baseline)
 
+# Week 3: Phase 2 Zero-Allocation Library
+add_library(lob_optimized STATIC
+    src/optimized/OrderBookOptimized.cpp
+    src/optimized/OrderBookOptimized.hpp
+    src/optimized/OptimizedOrder.hpp
+    src/optimized/SlabAllocator.hpp
+    src/optimized/DirectPriceLadder.hpp
+    src/optimized/FlatOrderIndex.hpp
+    src/common/Order.hpp
+    src/common/Types.hpp
+)
+target_include_directories(lob_optimized PUBLIC src/common src/optimized)
+
+# Week 3: Slab Allocator & Index Unit Tests
+add_executable(SlabAllocatorTests test/SlabAllocatorTests.cpp)
+target_link_libraries(SlabAllocatorTests PRIVATE lob_optimized)
+
+# Week 3: Optimized Order Book Functional Tests
+add_executable(OptimizedOrderBookTests test/OptimizedOrderBookTests.cpp)
+target_link_libraries(OptimizedOrderBookTests PRIVATE lob_optimized)
+
+# Week 3: Side-by-Side Phase 1 vs Phase 2 Comparison Benchmark
+add_executable(PhaseComparisonBenchmark benchmark/PhaseComparisonBenchmark.cpp)
+target_link_libraries(PhaseComparisonBenchmark PRIVATE lob_baseline lob_optimized)
+
