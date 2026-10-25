@@ -106,4 +106,15 @@ target_include_directories(MicrostructureTests PRIVATE src/common src/microstruc
 add_executable(MicrostructureBenchmark benchmark/MicrostructureBenchmark.cpp)
 target_include_directories(MicrostructureBenchmark PRIVATE src/common src/microstructure)
 
+# Week 9: Memory-Mapped Journaling & Deterministic Crash Replay Tests
+add_executable(JournalReplayTests test/JournalReplayTests.cpp)
+target_link_libraries(JournalReplayTests PRIVATE lob_optimized)
+target_include_directories(JournalReplayTests PRIVATE src/common src/optimized src/persistence)
+
+# Week 9: Journal Write Latency, Crash Recovery & L3 Dashboard Benchmark
+add_executable(JournalBenchmark benchmark/JournalBenchmark.cpp)
+target_link_libraries(JournalBenchmark PRIVATE lob_optimized)
+target_include_directories(JournalBenchmark PRIVATE src/common src/optimized src/persistence src/microstructure src/visualization)
+
+
 
