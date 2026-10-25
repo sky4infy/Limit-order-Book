@@ -1,4 +1,4 @@
-# Institutional-Grade Limit Order Book & Ultra-Low-Latency HFT Engine (C++20)
+# Institutional-Grade Limit Order Book & Ultra-Low-Latency Matching Engine (C++20)
 
 [![Standard](https://img.shields.io/badge/C%2B%2B-20-blue.svg?logo=c%2B%2B)](https://en.cppreference.com/w/cpp/20)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/sky4infy/Limit-order-Book)
@@ -12,88 +12,53 @@
 [![Persistence](https://img.shields.io/badge/Persistence-Zero--Syscall%20Memory--Mapped%20WAL-yellowgreen.svg)](https://github.com/sky4infy/Limit-order-Book)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An institutional-grade, deterministic, ultra-low-latency electronic exchange matching engine and quantitative trading infrastructure implemented in **Modern C++20**. Architected from the hardware up with **Mechanical Sympathy** for modern x86 CPU memory hierarchies, L1/L2 cache coherency protocols (MESI/MOESI), and branch predictors.
+A deterministic, ultra-low-latency electronic exchange matching engine and quantitative trading infrastructure implemented in **Modern C++20**. Designed from the hardware up with **Mechanical Sympathy** for modern x86 CPU memory hierarchies, L1/L2 cache coherency protocols (MESI/MOESI), and branch predictors.
 
-The engine documents a rigorous evolutionary transformation from a textbook algorithmic baseline (`std::map` + `std::list` operating at 1,250 ns median latency) into a production-grade institutional matching core operating at **14.5 ns median latency** and **68.9 Million orders/sec sustained throughput**. The platform incorporates binary exchange gateways (**NASDAQ OUCH 5.0** and **TotalView-ITCH 5.0**), discrete **Walrasian Call Auctions**, **CME Pro-Rata allocation**, quantitative microstructure signals (**Sasha Stoikov Micro-Price**, **Rolling VPIN Flow Toxicity**, **Avellaneda-Stoikov Quoting**), lock-free **SPSC Single-Writer concurrency**, and zero-syscall **Memory-Mapped Transaction Journaling** with bit-exact crash recovery.
+The platform demonstrates an architectural transformation from a textbook algorithmic baseline (`std::map` + `std::list` operating at 1,250 ns) into a production-grade matching engine operating at **14.5 ns median latency** and **68.9 Million orders/sec sustained throughput**. The system features zero dynamic heap allocations on the hot path, native binary exchange gateways (**NASDAQ OUCH 5.0** & **TotalView-ITCH 5.0**), discrete **Walrasian Call Auctions**, **CME Pro-Rata matching**, quantitative signals (**Sasha Stoikov Micro-Price**, **Rolling VPIN Flow Toxicity**, **Avellaneda-Stoikov Quoting**), lock-free **SPSC Single-Writer concurrency**, and zero-syscall **Memory-Mapped Transaction Journaling** with deterministic state recovery.
 
 ---
 
-## 📑 Master Table of Contents
+## 📑 Table of Contents
 
-- [Architectural Evolution: 10-Week Roadmap](#-architectural-evolution-10-week-roadmap)
+- [Key Performance Indicators](#-key-performance-indicators)
 - [System Architecture & End-to-End Ingress Pipeline](#-system-architecture--end-to-end-ingress-pipeline)
 - [Master Empirical Benchmark Matrix](#-master-empirical-benchmark-matrix)
-- [Hardware & Coordinated Omission Profiling](#-hardware--coordinated-omission-profiling)
-- [Core Engineering Pillars & Deep Dives](#-core-engineering-pillars--deep-dives)
+- [Hardware Profiling & Coordinated Omission Analysis](#-hardware-profiling--coordinated-omission-analysis)
+- [Architectural Transformation: Baseline vs Production Core](#-architectural-transformation-baseline-vs-production-core)
+- [Core Engineering Deep Dives](#-core-engineering-deep-dives)
   - [1. Mechanical Sympathy & Zero-Allocation Memory Arena](#1-mechanical-sympathy--zero-allocation-memory-arena)
   - [2. Lock-Free Single-Writer Concurrency & Cache Isolation](#2-lock-free-single-writer-concurrency--cache-isolation)
   - [3. Binary Exchange Gateways (NASDAQ OUCH 5.0 & ITCH 5.0)](#3-binary-exchange-gateways-nasdaq-ouch-50--itch-50)
   - [4. Advanced Exchange Mechanics & Market Microstructure](#4-advanced-exchange-mechanics--market-microstructure)
   - [5. Quantitative Alpha Signals & High-Frequency Market Making](#5-quantitative-alpha-signals--high-frequency-market-making)
   - [6. Deterministic Memory-Mapped Journaling & L3 Visualizer](#6-deterministic-memory-mapped-journaling--l3-visualizer)
-- [Interactive Course & Complete Study Packages](#-interactive-course--complete-study-packages)
-- [Repository File Hierarchy & Code Navigation](#-repository-file-hierarchy--code-navigation)
+- [System Invariants & Algorithmic Complexities](#-system-invariants--algorithmic-complexities)
+- [Architectural Trade-Offs & Senior Design Decisions](#-architectural-trade-offs--senior-design-decisions)
+- [Repository File Hierarchy](#-repository-file-hierarchy)
 - [Build, Test & Benchmark Quickstart](#-build-test--benchmark-quickstart)
-- [Superday Quant Developer Interview Defense Matrix](#-superday-quant-developer-interview-defense-matrix)
-- [Quantitative Developer Resume Highlights](#-quantitative-developer-resume-highlights)
 - [Academic References & Bibliography](#-academic-references--bibliography)
 - [License](#-license)
 
 ---
 
-## 🏛 Architectural Evolution: 10-Week Roadmap
+## ⚡ Key Performance Indicators
 
-```
-========================================================================================================================
-                                      EVOLUTIONARY ARCHITECTURE ROADMAP
-========================================================================================================================
-
- [WEEK 1: Textbook Baseline]
-  std::map<Price, std::list<Order>> ──> Latency: 1,250 ns | Throughput: 800k ops/s | Red-black tree pointer chasing
-                                            │
-                                            ▼
- [WEEK 2: Mechanical Sympathy]
-  Hardware Memory Auditing          ──> Cache-line alignment (alignas(64)), false sharing mitigation, padding elimination
-                                            │
-                                            ▼
- [WEEK 3: Cache-Conscious Engine]
-  Direct Price Ladder + Slab        ──> Latency: 14.5 ns (86x faster) | 68.9M ops/s | 1-cycle BBO bitmask (lzcnt/tzcnt)
-                                            │
-                                            ▼
- [WEEK 4: In-Place Order Mutation]
-  Zero-Alloc Amend & Cancel         ──> 13.8 ns cancellations | FIFO queue priority loss rules | Flat open-addressing hash
-                                            │
-                                            ▼
- [WEEK 5: Lock-Free Concurrency]
-  SPSC Ingestion Ring Buffer        ──> 54.8M msgs/s | 18.2 ns latency | Cacheline-padded atomic head/tail | RDTSC HDR profiler
-                                            │
-                                            ▼
- [WEEK 6: Binary Exchange Protocols]
-  NASDAQ OUCH 5.0 & ITCH 5.0        ──> 25.4M msgs/s | 12.0 ns parse | Zero-copy endianness conversion | MoldUDP64 framing
-                                            │
-                                            ▼
- [WEEK 7: Advanced Exchange Mechanics]
-  Walrasian Auctions & Pro-Rata     ──> 10,000 orders in 23.9ms | CME Pro-Rata fairness | Self-Trade Prevention | Icebergs
-                                            │
-                                            ▼
- [WEEK 8: Quantitative Microstructure]
-  Stoikov Micro-Price & VPIN Flow   ──> Micro-Price (19 ns) | Rolling VPIN toxicity (26 ns) | Avellaneda-Stoikov quoting
-                                            │
-                                            ▼
- [WEEK 9: System Hardening & L3 GUI]
-  Memory-Mapped Journal & Replay    ──> 7.64M writes/s (335 MB/s) | 253ms 1M order replay | Live ASCII Level 3 terminal
-                                            │
-                                            ▼
- [WEEK 10: Superday Mastery & Course]
-  Complete Curriculum & Packages    ──> 38/38 passing builds | Interactive Course | 24-Day GitHub roadmap | Study ZIPs
-========================================================================================================================
-```
+- **Median Order Latency (p50)**: **14.5 ns** (single-core insertion & book matching).
+- **Tail Latency (p99)**: **45.0 ns** (under sustained multi-million order load).
+- **Sustained Throughput**: **68.9 Million orders/sec** on an isolated x86-64 core.
+- **Dynamic Heap Allocations**: **0 malloc / 0 free** during active market hours.
+- **Memory Footprint**: Strictly bounded 64-byte order layout (`alignas(64)`) matching CPU L1 cache lines.
+- **BBO Discovery**: **1 CPU clock cycle** via 2-level 64-bit hierarchical occupancy bitmask using `lzcnt` / `tzcnt`.
+- **Inter-Thread Message Ingress**: **18.2 ns median latency** (54.8M msgs/sec) via lock-free SPSC ring buffers.
+- **Binary Wire Ingestion**: **12.0 ns median parse latency** (25.4M msgs/sec) via zero-copy NASDAQ OUCH 5.0 codec.
+- **Zero-Syscall Persistence**: **7.64 Million writes/sec** (335 MB/s @ 20 ns median) via memory-mapped circular log.
+- **Deterministic Crash Recovery**: **1,000,000 transactions replayed in 253 ms** (3.95M records/sec).
 
 ---
 
-## ⚡ System Architecture & End-to-End Ingress Pipeline
+## 🏛 System Architecture & End-to-End Ingress Pipeline
 
-The engine is engineered around the **Single-Writer Principle** (LMAX Disruptor model) paired with hardware core isolation to eradicate operating system scheduler latency cliffs and cross-core cache invalidation storms:
+The matching engine is built around the **Single-Writer Principle** (LMAX Disruptor pattern) combined with OS thread isolation to eliminate scheduler latency cliffs and cross-core cache invalidation thrashing:
 
 ```
   INBOUND NETWORK TRAFFIC (OUCH 5.0 / MoldUDP64 Multicast)
@@ -160,34 +125,34 @@ The engine is engineered around the **Single-Writer Principle** (LMAX Disruptor 
 
 All microbenchmarks were compiled using MSVC `/std:c++20 /O2 /EHsc /W4 /permissive-` on an isolated x86-64 testbed (~2.50 GHz base frequency) using hardware Invariant TSC (`__rdtsc`) serialized with `lfence` barriers (`rdtsc_fenced`):
 
-| Component / Subsystem | Architectural Mechanism | Latency (p50) | Tail (p90) | Tail (p99) | Tail (p99.9) | Sustained Throughput | Microarchitectural Bottleneck Addressed |
+| Subsystem / Engine Component | Architectural Mechanism | Latency (p50) | Tail (p90) | Tail (p99) | Tail (p99.9) | Sustained Throughput | Microarchitectural Bottleneck Addressed |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Baseline Engine** | `std::map` + `std::list` | 1,250.0 ns | 4,200.0 ns | 38,100 ns | 372,052 ns | 800,000 ops/s | Red-black tree pointer chasing & dynamic malloc |
-| **Cache-Aligned Order** | 64-byte `alignas(64)` | 68.0 ns | 92.0 ns | 185.0 ns | 420.0 ns | 14,700,000 ops/s | Dual-cacheline split penalties & false sharing |
-| **Optimized Core (Add)**| Slab + Bitmask Ladder | **14.5 ns** | **18.2 ns** | **45.0 ns** | **1,163.0 ns** | **68,900,000 ops/s** | Zero-alloc intrusive doubly linked lists + `lzcnt` |
-| **Optimized (Cancel)** | In-Place Backward Shift | **13.8 ns** | **16.5 ns** | **38.0 ns** | **942.0 ns** | **72,400,000 ops/s** | Open-addressing flat hash index, tombstone-free |
-| **SPSC Ring Buffer** | Lock-Free Shadow Cursors | **18.2 ns** | **24.0 ns** | **62.0 ns** | **1,410.0 ns** | **54,800,000 msgs/s**| MESI cacheline invalidation storm eradication |
-| **Binary Gateway** | OUCH 5.0 Zero-Copy Parse | **12.0 ns** | **15.0 ns** | **32.0 ns** | **850.0 ns** | **25,400,000 msgs/s**| Zero string copies, single-cycle `BSWAP` |
-| **Walrasian Auction** | 4-Tier 10k Order Cross | **2.4 µs/ord**| **3.8 µs** | **8.1 µs** | **12.8 µs** | **668,153 shs cross**| O(N log N) aggregate curve sorting & crossing |
-| **CME Pro-Rata Engine**| Fractional Remainder | **501.0 ns** | **780.0 ns** | **1,420 ns** | **2,450.0 ns** | **1,560,000 ops/s** | Proportional volume division & secondary sorting |
+| **Baseline FIFO Engine** | `std::map` + `std::list` | 1,250.0 ns | 4,200.0 ns | 38,100 ns | 372,052 ns | 800,000 ops/s | Red-black tree pointer chasing & dynamic malloc |
+| **Cache-Aligned Order Struct**| 64-byte `alignas(64)` | 68.0 ns | 92.0 ns | 185.0 ns | 420.0 ns | 14,700,000 ops/s | Dual-cacheline split penalties & false sharing |
+| **Optimized Core (Add Order)**| Slab + Bitmask Ladder | **14.5 ns** | **18.2 ns** | **45.0 ns** | **1,163.0 ns** | **68,900,000 ops/s** | Zero-alloc intrusive doubly linked lists + `lzcnt` |
+| **Optimized (Cancel Order)** | In-Place Backward Shift | **13.8 ns** | **16.5 ns** | **38.0 ns** | **942.0 ns** | **72,400,000 ops/s** | Open-addressing flat hash index, tombstone-free |
+| **SPSC Lock-Free Queue** | Ring Buffer + Shadow Cursors | **18.2 ns** | **24.0 ns** | **62.0 ns** | **1,410.0 ns** | **54,800,000 msgs/s**| MESI cacheline invalidation storm eradication |
+| **Binary Protocol Gateway** | OUCH 5.0 Zero-Copy Parse | **12.0 ns** | **15.0 ns** | **32.0 ns** | **850.0 ns** | **25,400,000 msgs/s**| Zero string allocations, single-cycle `BSWAP` |
+| **Walrasian Call Auction** | 4-Tier 10k Order Cross | **2.4 µs/ord**| **3.8 µs** | **8.1 µs** | **12.8 µs** | **668,153 shs cross**| O(N log N) aggregate curve sorting & crossing |
+| **CME Pro-Rata Engine** | Fractional Remainder | **501.0 ns** | **780.0 ns** | **1,420 ns** | **2,450.0 ns** | **1,560,000 ops/s** | Proportional volume division & secondary sorting |
 | **Stoikov Micro-Price** | Multi-Depth Imbalance | **19.0 ns** | **24.0 ns** | **52.0 ns** | **110.0 ns** | **21,300,000 evals/s**| L2 queue depth weighting, zero heap allocations |
-| **Rolling VPIN Flow** | 50-Bucket Volume Window | **26.0 ns** | **34.0 ns** | **78.0 ns** | **145.0 ns** | **17,600,000 evals/s**| Lee-Ready tick-rule trade classification |
-| **Avellaneda-Stoikov** | Inventory-Skewed Quoting| **19.0 ns** | **25.0 ns** | **58.0 ns** | **120.0 ns** | **19,600,000 evals/s**| Closed-form reservation price calculation |
+| **Rolling VPIN Flow Toxicity**| 50-Bucket Volume Window | **26.0 ns** | **34.0 ns** | **78.0 ns** | **145.0 ns** | **17,600,000 evals/s**| Lee-Ready tick-rule trade classification |
+| **Avellaneda-Stoikov Quoter** | Inventory-Skewed Quoting| **19.0 ns** | **25.0 ns** | **58.0 ns** | **120.0 ns** | **19,600,000 evals/s**| Closed-form reservation price calculation |
 | **Memory-Mapped WAL** | Zero-Syscall `mmap` Log | **20.0 ns** | **35.0 ns** | **110.0 ns** | **1,436.0 ns** | **7,643,342 writes/s**| Kernel write context-switch bypass (335 MB/s) |
-| **Deterministic Replay**| 1,000,000 Tx Recovery | **253 ms total**| **N/A** | **N/A** | **N/A** | **3,948,611 recs/s** | Monotonic sequence & 46-byte XOR checksum |
+| **Deterministic Replay** | 1,000,000 Tx Recovery | **253 ms total**| **N/A** | **N/A** | **N/A** | **3,948,611 recs/s** | Monotonic sequence & 46-byte XOR checksum |
 
 ---
 
-## 🔬 Hardware & Coordinated Omission Profiling
+## 🔬 Hardware Profiling & Coordinated Omission Analysis
 
 ### The Coordinated Omission Phenomenon (Gil Tene Methodology)
 
-In ultra-low-latency financial engineering, traditional closed-loop benchmarks measure request-to-response round-trip latency by issuing a request, awaiting the matching engine's response, and recording the duration:
+In ultra-low-latency financial engineering, traditional closed-loop benchmarks measure request-to-response round-trip latency by issuing a request, awaiting the matching engine's response, and recording the elapsed duration:
 
 $$\Delta t_{\text{closed}} = t_{\text{response}} - t_{\text{send}}$$
 
 > [!WARNING]
-> **The Closed-Loop Trap**: If the engine stalls for 1 millisecond due to a memory page fault or OS context switch, a closed-loop client pauses along with it, issuing zero orders during the stall. In reality, external market participants never pause—hundreds of orders queue in operating system TCP buffers, each suffering the cumulative delay.
+> **The Closed-Loop Flaw**: If the engine stalls for 1 millisecond due to a dynamic memory allocation or OS context switch, a closed-loop client pauses along with it, issuing zero requests during the stall. In a live electronic market, external participants never pause—hundreds of orders accumulate in operating system TCP buffers, each suffering the cumulative delay.
 
 Our benchmarking harness ([`benchmark/CoordinatedOmissionBenchmark.cpp`](benchmark/CoordinatedOmissionBenchmark.cpp)) implements **Gil Tene's backfilling algorithm** using high-resolution Invariant TSC timestamps. When an execution delay exceeds the expected inter-arrival interval $\Delta t_{\text{interval}}$, the harness synthesizes all omitted samples:
 
@@ -207,19 +172,54 @@ Max Latency             48,000 ns               12,500,000 ns (12.5 ms)         
 ----------------------------------------------------------------------------------------
 ```
 
-By transitioning to our zero-allocation Phase 2 engine ([`src/optimized/OrderBookOptimized.cpp`](src/optimized/OrderBookOptimized.cpp)), dynamic heap stalls are completely eradicated, keeping the open-loop p99.9 tail strictly sub-microsecond.
+By transitioning to our zero-allocation engine ([`src/optimized/OrderBookOptimized.cpp`](src/optimized/OrderBookOptimized.cpp)), dynamic heap stalls are completely eradicated, keeping the open-loop p99.9 tail strictly sub-microsecond.
 
 ---
 
-## 🧩 Core Engineering Pillars & Deep Dives
+## 🔄 Architectural Transformation: Baseline vs Production Core
+
+```
+========================================================================================================================
+                                ARCHITECTURAL PERFORMANCE EVOLUTION
+========================================================================================================================
+
+ [TEXTBOOK BASELINE]
+  Data Structures: std::map<Price, std::list<Order>> + std::unordered_map<OrderId, ...>
+  Memory Strategy: Dynamic node allocations via standard malloc/free on every order
+  Performance    : Latency: 1,250 ns p50 | Throughput: 800,000 ops/s | Tail (p99.9): 372 µs
+  Root Flaw      : Red-black tree pointer chasing, cache misses (50-100ns per dereference), memory fragmentation
+                         │
+                         ▼
+ [HARDWARE-ALIGNED ARCHITECTURE]
+  Memory Layout  : alignas(64) cache-line alignment, 0 internal padding, eliminated cache-split penalties
+  Performance    : Latency: 68 ns p50 | Throughput: 14.7M ops/s | Spatial locality enabled CPU prefetching
+                         │
+                         ▼
+ [ZERO-ALLOCATION PRODUCTION CORE]
+  Data Structures: DirectPriceLadder (131k levels) + 2-Level Bitmask + SlabAllocator + FlatOrderIndex
+  Memory Strategy: 1,000,000-order contiguous pre-allocated arena pool, intrusive doubly linked lists
+  Performance    : Latency: 14.5 ns p50 (86x faster) | Throughput: 68.9M ops/s | Tail (p99.9): 1.16 µs
+  Key Innovation : BBO discovered in 1 CPU cycle via hardware lzcnt/tzcnt intrinsics; 0 malloc on hot path
+                         │
+                         ▼
+ [SINGLE-WRITER CONCURRENCY & PERSISTENCE]
+  Concurrency    : Lock-Free SPSC Ring Buffer with cacheline-padded atomic cursors and shadow cursors
+  Gateways       : Zero-copy NASDAQ OUCH 5.0 and TotalView-ITCH 5.0 parsers with hardware BSWAP
+  Persistence    : Zero-syscall memory-mapped WAL sustaining 7.64M writes/sec with 253ms 1M order replay
+========================================================================================================================
+```
+
+---
+
+## 🧩 Core Engineering Deep Dives
 
 ### 1. Mechanical Sympathy & Zero-Allocation Memory Arena
 
-Textbook C++ order books using `std::map<Price, std::list<Order>>` suffer from catastrophic cache degradation:
+Textbook C++ order books using `std::map<Price, std::list<Order>>` suffer from severe microarchitectural penalties:
 1. **Red-Black Tree Pointer Chasing**: Node lookups require traversing tree depth ($O(\log N)$). Because node allocations are scattered non-contiguously across virtual memory, the CPU hardware prefetcher fails, resulting in a cold L1/L2 cache miss (50–100 ns stall) at every node dereference.
-2. **Doubly-Linked List Overhead**: Every order inserted into `std::list` incurs an internal 24-byte node wrapper (`prev`, `next`, value) and invokes `malloc`, causing memory fragmentation and TLB churn.
+2. **Doubly-Linked List Overhead**: Every order inserted into `std::list` incurs an internal 24-byte node wrapper (`prev`, `next`, value) and invokes `malloc`, causing memory fragmentation and TLB thrashing.
 
-#### Solution: `OptimizedOrder` (64-Byte Cache-Aligned Layout)
+#### `OptimizedOrder` (64-Byte Cache-Aligned Layout)
 In [`src/optimized/OptimizedOrder.hpp`](src/optimized/OptimizedOrder.hpp), the order struct is aligned explicitly to the CPU L1 cache line boundary:
 
 ```cpp
@@ -242,10 +242,10 @@ static_assert(sizeof(OptimizedOrder) == 64, "OptimizedOrder must exactly occupy 
 - **Zero Cache-Line Splitting**: An order record never straddles two physical cache lines.
 - **Intrusive 32-bit Pointers**: Replaces 64-bit virtual memory pointers with 32-bit slab array indices (`prev_idx`, `next_idx`), shrinking node metadata by 50% and allowing up to 4.29 billion orders in contiguous memory.
 
-#### Solution: `SlabAllocator<T, Capacity>`
+#### `SlabAllocator<T, Capacity>`
 In [`src/optimized/SlabAllocator.hpp`](src/optimized/SlabAllocator.hpp), a contiguous pre-allocated arena pool manages up to 1,000,000 orders. Allocation and deallocation are $O(1)$ stack operations manipulating an intrusive free-list array with zero dynamic heap allocations on the hot path.
 
-#### Solution: `DirectPriceLadder` & 2-Level 64-Bit Hierarchical Bitmask
+#### `DirectPriceLadder` & 2-Level 64-Bit Hierarchical Bitmask
 In [`src/optimized/DirectPriceLadder.hpp`](src/optimized/DirectPriceLadder.hpp), prices are indexed directly into a 131,072-element array ($O(1)$ lookup). Best Bid and Best Offer discovery executes in **a single CPU clock cycle** using hardware bit manipulation intrinsics:
 - **Level 1 Bitmask**: 2,048 bits representing 32 blocks of 64 price levels.
 - **Level 2 Bitmask**: 32 distinct 64-bit words representing each active price block.
@@ -260,7 +260,7 @@ Multi-threaded matching engines that synchronize through `std::mutex` or `std::a
 - **OS Descheduling Cliffs**: When an ingress thread encounters mutex contention, the operating system transitions it to kernel sleep; waking it back up costs 5–50 microseconds, creating tail latency spikes beyond 1.9 milliseconds.
 - **MESI Cache Ping-Pong**: Multiple cores issuing atomic read-modify-write (`lock cmpxchg`) loops on a shared memory address saturate the CPU interconnect bus with cache-invalidation messages, starving memory throughput.
 
-#### Solution: Single-Writer Architecture & Padded SPSC Ring Buffer
+#### Single-Writer Architecture & Padded SPSC Ring Buffer
 In [`src/lockfree/SingleWriterEngine.hpp`](src/lockfree/SingleWriterEngine.hpp) and [`src/lockfree/SpscRingBuffer.hpp`](src/lockfree/SpscRingBuffer.hpp), the matching engine uses the **Disruptor pattern**:
 - Ingress gateway threads enqueue inbound orders into their own dedicated lock-free Single-Producer Single-Consumer (SPSC) ring buffer.
 - A single, dedicated Matching Engine Core pinned to CPU Core 2 ([`src/lockfree/ThreadAffinity.hpp`](src/lockfree/ThreadAffinity.hpp)) consumes sequentially from each ring buffer without taking a single lock or mutex.
@@ -402,31 +402,56 @@ A live ASCII market depth dashboard rendering top-10 bid/ask depth, horizontal v
 
 ---
 
-## 📱 Interactive Course & Complete Study Packages
+## 📐 System Invariants & Algorithmic Complexities
 
-The repository contains complete offline study packages, curriculum PDFs, and single-file interactive course packages designed for interview preparation and systems self-study:
+The engine maintains deterministic performance by upholding strict theoretical and microarchitectural complexity bounds:
 
-| Educational Resource | Format | Description |
-| :--- | :--- | :--- |
-| **Interactive 10-Week Course** | [`COURSE_COMPLETE_10_WEEKS_INTERACTIVE.html`](COURSE_COMPLETE_10_WEEKS_INTERACTIVE.html) | Standalone dark-mode offline web app with sidebar navigation, metric cards, code walkthroughs, and flashcards. |
-| **Superday Defense Guide** | [`WEEK_10_SUPERDAY_INTERVIEW_DEFENSE_AND_RESUME.md`](WEEK_10_SUPERDAY_INTERVIEW_DEFENSE_AND_RESUME.md) | High-yield interview trap defense notes, quantitative resume bullet points, and performance milestones. |
-| **Daily Commit Schedule** | [`GITHUB_DAILY_COMMITS_ROADMAP.md`](GITHUB_DAILY_COMMITS_ROADMAP.md) | 24-day schedule committing 2 files per day to build a consistent, institutional commit graph. |
-| **Curriculum Roadmap** | [`ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md`](ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md) | Complete 10-week master plan from textbook baseline to superday defense. |
-| **Study Packages (ZIP)** | `Week_1_Complete_Study_Package.zip` through `Week_10_Complete_Study_Package.zip` | Standalone packaged study archives containing all code, notes, and compiled guides. |
+| Core Engine Operation | Time Complexity | Allocations on Hot Path | Max CPU Cache Lines Touched | Primary Hardware Mechanism |
+| :--- | :--- | :--- | :--- | :--- |
+| **New Limit Order Insertion** | $O(1)$ | **0** (`SlabAllocator`) | 2 lines (Ladder level + Order record) | Direct array index + Intrusive queue append |
+| **Order Cancellation** | $O(1)$ | **0** | 2 lines (Hash entry + Order record) | `FlatOrderIndex` open-addressing lookup |
+| **Order Amendment (Reduce Qty)**| $O(1)$ | **0** | 1 line (Order record) | In-place quantity modification; priority retained |
+| **Order Amendment (Increase Qty)**| $O(1)$ | **0** | 2 lines (Order record + Queue tail) | Relinquish priority; requeue at tail |
+| **Best Bid / Best Offer Query**| $O(1)$ (1 cycle) | **0** | 1 line (Hierarchical bitmask) | Hardware `lzcnt` / `tzcnt` instruction |
+| **Market Order Matching** | $O(K)$ fills | **0** | 2 lines per match | Sequential queue pop + memory-mapped log |
+| **Inter-Thread SPSC Enqueue** | $O(1)$ wait-free | **0** | 1 line (Private tail cursor) | `acquire-release` memory barriers |
+| **Write-Ahead Log Append** | $O(1)$ | **0** | 1 line (Virtual memory page) | User-space pointer store (`mmap` / `MapViewOfFile`) |
 
 ---
 
-## 📁 Repository File Hierarchy & Code Navigation
+## ⚖ Architectural Trade-Offs & Senior Design Decisions
+
+Every architectural decision was evaluated against its hardware and algorithmic trade-offs:
+
+### 1. Direct Price Ladder vs. Skip Lists / B-Trees
+- **Decision**: Fixed-size contiguous array representing 131,072 price levels backed by a two-level 64-bit hierarchical occupancy bitmask.
+- **Trade-off**: Requires pre-allocating memory for the price band (~16 MB).
+- **Justification**: A B-Tree or Skip List requires pointer traversal and logarithmic lookup time ($O(\log N)$), causing unpredictable L1 cache misses. The Direct Price Ladder offers absolute $O(1)$ single-cycle BBO lookup, which is essential for deterministic market matching.
+
+### 2. Single-Writer Disruptor vs. Multi-Producer Multi-Consumer (MPMC)
+- **Decision**: Pinned Single-Writer thread consuming from per-gateway SPSC ring buffers.
+- **Trade-off**: Requires dedicated CPU core pinning and pinned gateway threads.
+- **Justification**: MPMC queues require atomic read-modify-write loops (`lock cmpxchg`), which trigger MESI cacheline invalidation storms across CPU cores and lead to operating system descheduling. The Single-Writer model achieves zero locks, zero atomic contention, and maximum instruction cache locality.
+
+### 3. Open-Addressing Backward-Shift Hash vs. Chained Hash Tables
+- **Decision**: Flat open-addressing table with backward-shift deletion (`FlatOrderIndex`).
+- **Trade-off**: Requires maintaining a load factor under 0.70 (pre-allocating a power-of-two capacity).
+- **Justification**: Chained hash tables (`std::unordered_map`) allocate node wrappers on the heap and suffer from pointer-chasing cache misses. Backward-shift deletion eliminates tombstone pollution without secondary allocations, maintaining sub-20ns cancellations.
+
+### 4. Memory-Mapped Write-Ahead Log vs. Synchronous POSIX I/O
+- **Decision**: User-space memory mapping (`MapViewOfFile` / `mmap`) with monotonic sequence numbers.
+- **Trade-off**: Operating system controls the exact physical disk flush timing unless explicit `msync` is called.
+- **Justification**: Synchronous POSIX `write()` and `fsync()` incur kernel context switches and physical disk stalls (10–50 µs), blowing matching engine tail latency. Memory mapping allows hot-path writes to complete in 20 ns, relying on monotonic sequences and checksums for bit-level crash recovery.
+
+---
+
+## 📁 Repository File Hierarchy
 
 ```text
 Limit-order-Book/
 ├── CMakeLists.txt                               # Cross-platform CMake C++20 build configuration
 ├── build.bat                                    # Automated 38-step Windows MSVC build & run runner
-├── package_weeks.py                             # Automated study packaging & zip distribution script
 ├── README.md                                    # Master repository documentation
-├── COURSE_COMPLETE_10_WEEKS_INTERACTIVE.html    # Interactive 10-week web course
-├── GITHUB_DAILY_COMMITS_ROADMAP.md              # 24-day 2-files-per-day commit schedule
-├── WEEK_10_SUPERDAY_INTERVIEW_DEFENSE_AND_RESUME.md # Superday interview defense & resume bullet points
 ├── src/
 │   ├── common/
 │   │   ├── Types.hpp                            # Core domain primitives (Price, Quantity, OrderId, Side)
@@ -498,7 +523,7 @@ Limit-order-Book/
 
 ### Automated Windows MSVC Suite (38 Steps)
 
-The fastest way to verify all 10 unit test suites, run struct memory audits, and execute all 9 microbenchmarks is using the automated batch runner:
+To compile all targets with `/std:c++20 /O2 /EHsc /W4 /permissive-`, run all 10 unit test suites, and execute all 9 microbenchmarks:
 
 ```cmd
 .\build.bat
@@ -506,7 +531,7 @@ The fastest way to verify all 10 unit test suites, run struct memory audits, and
 
 This single command:
 1. Configures the 64-bit MSVC environment (`vcvars64.bat`).
-2. Compiles every executable with `/std:c++20 /O2 /EHsc /W4 /permissive-`.
+2. Compiles every executable with maximum optimizations.
 3. Runs all 10 unit test suites, halting immediately on any assertion failure.
 4. Executes all 9 microbenchmarks, logging cycle-accurate latency distributions.
 
@@ -532,39 +557,6 @@ cmake --build build --config Release -j
 
 ---
 
-## 🎯 Superday Quant Developer Interview Defense Matrix
-
-Key defense soundbites prepared for Quantitative Developer & Low-Latency Systems interviews:
-
-| Interviewer Question / Challenge | Core Engineering Defense & Architectural Justification |
-| :--- | :--- |
-| **"Why not use `std::unordered_map` for order indexing?"** | `std::unordered_map` allocates individual bucket nodes on the heap for every insert, incurring pointer dereferencing, L1/L2 cache misses, and unpredictable tail latency jitter during rehashing. We implemented [`FlatOrderIndex`](src/optimized/FlatOrderIndex.hpp), a contiguous flat array using power-of-two open addressing and backward-shift deletion to eliminate tombstones and maintain zero heap allocations on the hot path. |
-| **"How do you discover the Best Bid and Offer in $O(1)$ without tree traversal?"** | We use a 2-level 64-bit occupancy bitmask over 131,072 price levels ([`DirectPriceLadder`](src/optimized/DirectPriceLadder.hpp)). Best Bid is discovered via `_BitScanReverse64` (`lzcnt`) and Best Offer via `_BitScanForward64` (`tzcnt`). Both execute in a single CPU clock cycle regardless of book depth, completely bypassing tree traversal overhead. |
-| **"How do you prevent false sharing in your SPSC queue?"** | We align the queue structure to 64 bytes (`alignas(64)`) and place explicit 56-byte padding (`char pad_[56]`) between the atomic head and tail pointers ([`SpscRingBuffer`](src/lockfree/SpscRingBuffer.hpp)). This isolates producer and consumer writes onto separate physical cache lines, preventing cache coherency invalidate thrashing (MESI invalidation storms) across CPU cores. |
-| **"Why is Pro-Rata matching computationally slower than FIFO?"** | FIFO matching only requires advancing head pointers on the active price level queue ($O(1)$). CME Pro-Rata requires summing aggregate resting volume, performing integer division and fractional remainder calculations across all resting participants, and executing a secondary sorting pass to allocate remainder shares ($O(N)$ with arithmetic overhead). |
-| **"How does your engine achieve crash recovery without kernel write latency?"** | We use memory-mapped files ([`MemoryMappedJournal`](src/persistence/MemoryMappedJournal.hpp)). Transactions append directly into user-space mapped pointers (20 ns median latency). On host crash, the OS kernel guarantees physical memory flushing to disk. On reboot, the monotonic transaction sequence allows restoring book state in 253 ms for 1,000,000 orders. |
-| **"What is Coordinated Omission, and how did your benchmark expose it?"** | Closed-loop benchmarks stop issuing requests when the matching engine pauses for memory allocation, hiding the queuing delay suffered by real market participants. Using Gil Tene's backfilling algorithm in [`CoordinatedOmissionBenchmark`](benchmark/CoordinatedOmissionBenchmark.cpp), we exposed that a naive engine's true p99.9 tail was 1.67 ms (a 1,452x blowout from its reported 1.15 µs closed-loop figure). Our zero-allocation engine eliminates these pauses entirely. |
-
----
-
-## 💼 Quantitative Developer Resume Highlights
-
-Copy and paste these institutional-grade bullet points into your resume under **Featured Systems Projects** or **Experience**:
-
-```markdown
-High-Frequency Trading (HFT) Limit Order Book & Ultra-Low-Latency Exchange Core (C++20)
-• Engineered an institutional-grade, deterministic exchange matching engine in C++20, processing 68.9M orders/sec with a 14.5ns median latency on an invariant TSC-calibrated x86 testbed.
-• Eliminated dynamic memory allocations on the hot path via custom SlabAllocator (contiguous 64-byte cache-aligned orders) and a flat 131,072-level DirectPriceLadder with 2-level 64-bit hierarchical bitmasks for single-cycle BBO price discovery using hardware LZCNT intrinsics.
-• Architected a lock-free Single-Writer matching core based on the LMAX Disruptor pattern; eliminated MESI false sharing with alignas(64) cache-line isolation and shadow cursors, reducing ingress p99 tail latency from 1.94ms (mutex) to 30µs (98% reduction).
-• Implemented zero-copy NASDAQ OUCH 5.0 and TotalView-ITCH 5.0 binary protocol parsers using #pragma pack(1) wire structs and hardware BSWAP intrinsics, outperforming JSON/REST parsers by 4.0x (25.4M msgs/sec at 12ns median parse latency).
-• Corrected a 1,452x Coordinated Omission tail latency blowout (1.15µs to 1.67ms) using Gil Tene's backfilling algorithm and single-cycle HDR latency histograms.
-• Implemented discrete Call Auction uncrossing with 4-objective Walrasian equilibrium clearing, CME-style Pro-Rata allocation with largest fractional remainder distribution, Iceberg reserve orders, and regulatory Self-Trade Prevention (STP).
-• Integrated quantitative microstructure models: Sasha Stoikov's Micro-Price queue-imbalance estimator (21.3M evals/sec @ 19ns), VPIN order flow toxicity metric (17.6M evals/sec @ 26ns), and Avellaneda-Stoikov inventory-risk quoting bot (19.6M evals/sec @ 19ns).
-• Built a zero-allocation, append-only memory-mapped transaction journal (MapViewOfFile/mmap) sustaining 7.64M writes/sec (335 MB/s @ 20ns median) with 100% deterministic crash recovery (1,000,000 orders replayed in 253ms).
-```
-
----
-
 ## 📚 Academic References & Bibliography
 
 1. **Stoikov, S.** (2018). *The Micro-Price: A High-Frequency Estimator of Future Prices*. Quantitative Finance, 18(12), 1959–1966.
@@ -578,4 +570,4 @@ High-Frequency Trading (HFT) Limit Order Book & Ultra-Low-Latency Exchange Core 
 
 ## 📜 License
 
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information. Developed for quantitative engineering research, high-frequency trading matching engine development, and low-latency systems programming education.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information. Developed for quantitative engineering research, electronic trading systems development, and low-latency systems programming.
