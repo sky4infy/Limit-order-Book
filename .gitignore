@@ -19,41 +19,23 @@ build/
 *.user
 
 # ==============================================================================
-# PYTHON SCRIPTS & BUILD TOOLING
+# PYTHON BYTECODE & RUNTIME CACHES
 # ==============================================================================
 __pycache__/
 *.pyc
-*.py
 
 # ==============================================================================
-# STUDY PACKAGES, ARCHIVES & COMPRESSED FILES (FOR GOOGLE DRIVE ONLY)
+# HEAVY PACKAGES, ARCHIVES & PDF BUILDS (FOR LOCAL STORAGE / GOOGLE DRIVE)
 # ==============================================================================
 *.zip
 *.tar
 *.gz
-Week_1_Package/
-Week_2_Package/
-*Study_Package*
-*Package*
+*Package*/
+*.pdf
 
 # ==============================================================================
-# PERSONAL STUDY NOTES, WALKTHROUGHS, GUIDES & INTERVIEW DEFENSE
+# RUNTIME TEST & BENCHMARK TRANSACTION JOURNALS
 # ==============================================================================
-*.pdf
-*.html
-*COURSE*
-*CURRICULUM*
-*WALKTHROUGH*
-*INTERVIEW*
-*PLAN*
-*SELF_STUDY*
-*GUIDE*
-PHASED_BUILD_PLAN_AND_INTERVIEW_DEFENSE.md
-ZERO_TO_HERO_WEEKLY_LEARNING_PLAN.md
-WEEK_1_CODE_WALKTHROUGH_AND_ARCHITECTURE.md
-WEEK_2_SELF_STUDY_AND_CODE_WALKTHROUGH.md
-WEEK_2_COMPUTER_ARCHITECTURE_AND_MECHANICAL_SYMPATHY.md
-WEEK_1_INTERVIEW_PREPARATION_AND_DEFENSE.md
-WEEK_2_INTERVIEW_PREPARATION_AND_DEFENSE.md
-WEEK_1_AND_WEEK_2_COMPLETE_CURRICULUM.md
-COURSE_WEEK_1_AND_2_INTERACTIVE.html
+*.journal
+test_journal.bin
+benchmark.journal
