@@ -92,8 +92,6 @@ EngineEvaluation evaluate_engine_with_coordinated_omission(
     }
     book.clear();
 
-    const uint64_t target_interval_cycles = static_cast<uint64_t>(target_interval_ns * tsc_ghz);
-
     // =========================================================================
     // 1. NAIVE CLOSED-LOOP RUN
     // =========================================================================
@@ -122,8 +120,6 @@ EngineEvaluation evaluate_engine_with_coordinated_omission(
     // In an open-loop system, orders arrive at fixed intervals from the network.
     // If an order experiences service time T > interval, subsequent arrivals queue up.
     // We record true queue wait time + service time using HdrHistogram.
-    uint64_t simulated_clock_cycles = 0;
-
     for (const auto& ord : orders) {
         uint64_t t0 = rdtsc_fenced();
         book.add_order(ord);
@@ -132,19 +128,10 @@ EngineEvaluation evaluate_engine_with_coordinated_omission(
         uint64_t service_cycles = t1 - t0;
         uint64_t service_ns = static_cast<uint64_t>(service_cycles / tsc_ghz);
 
-        // Account for queuing delay if the engine was running behind schedule
-        uint64_t total_experienced_latency_ns = service_ns;
-        if (service_cycles > target_interval_cycles) {
-            simulated_clock_cycles += (service_cycles - target_interval_cycles);
-        } else if (simulated_clock_cycles > 0) {
-            uint64_t catchup = std::min(simulated_clock_cycles, target_interval_cycles - service_cycles);
-            simulated_clock_cycles -= catchup;
-        }
-
-        total_experienced_latency_ns += static_cast<uint64_t>(simulated_clock_cycles / tsc_ghz);
-
-        // Record with Coordinated Omission backfilling
-        eval.corrected_hist.record_with_expected_interval(total_experienced_latency_ns, target_interval_ns);
+        // Record with Gil Tene's Coordinated Omission correction:
+        // If an operation took service_ns > target_interval_ns, the engine stalled the arrival stream.
+        // Backfill the omitted arrivals that were blocked during the stall.
+        eval.corrected_hist.record_with_expected_interval(service_ns, target_interval_ns);
     }
 
     return eval;
