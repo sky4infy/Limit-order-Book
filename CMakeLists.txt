@@ -64,3 +64,11 @@ target_link_libraries(OptimizedOrderBookTests PRIVATE lob_optimized)
 add_executable(PhaseComparisonBenchmark benchmark/PhaseComparisonBenchmark.cpp)
 target_link_libraries(PhaseComparisonBenchmark PRIVATE lob_baseline lob_optimized)
 
+# Week 4: HDR Histogram Unit Tests
+add_executable(HdrHistogramTests test/HdrHistogramTests.cpp)
+target_include_directories(HdrHistogramTests PRIVATE src/common)
+
+# Week 4: Coordinated Omission & Open-Loop Benchmark Harness
+add_executable(CoordinatedOmissionBenchmark benchmark/CoordinatedOmissionBenchmark.cpp)
+target_link_libraries(CoordinatedOmissionBenchmark PRIVATE lob_baseline lob_optimized)
+
