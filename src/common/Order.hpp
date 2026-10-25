@@ -13,6 +13,9 @@ struct Order {
     Quantity  initial_quantity;
     Timestamp timestamp;
 
+    Order()
+        : order_id(0), side(Side::BUY), price(0), quantity(0), initial_quantity(0), timestamp(0) {}
+
     Order(OrderId id, Side s, Price p, Quantity qty, Timestamp ts = 0)
         : order_id(id), side(s), price(p), quantity(qty), initial_quantity(qty), timestamp(ts) {}
 

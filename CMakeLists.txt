@@ -82,3 +82,11 @@ add_executable(MultiThreadedContentionBenchmark benchmark/MultiThreadedContentio
 target_link_libraries(MultiThreadedContentionBenchmark PRIVATE lob_optimized)
 target_include_directories(MultiThreadedContentionBenchmark PRIVATE src/common src/optimized src/lockfree)
 
+# Week 6: NASDAQ OUCH 5.0 & ITCH 5.0 Protocol Unit Tests
+add_executable(ProtocolTests test/ProtocolTests.cpp)
+target_include_directories(ProtocolTests PRIVATE src/common src/protocol)
+
+# Week 6: JSON/REST vs Zero-Copy Binary Protocol Benchmark
+add_executable(ProtocolBenchmark benchmark/ProtocolBenchmark.cpp)
+target_include_directories(ProtocolBenchmark PRIVATE src/common src/protocol)
+
