@@ -98,3 +98,12 @@ target_include_directories(ExchangeMechanicsTests PRIVATE src/common src/exchang
 add_executable(AuctionBenchmark benchmark/AuctionBenchmark.cpp)
 target_include_directories(AuctionBenchmark PRIVATE src/common src/exchange)
 
+# Week 8: Market Microstructure & Algorithmic Strategy Unit Tests
+add_executable(MicrostructureTests test/MicrostructureTests.cpp)
+target_include_directories(MicrostructureTests PRIVATE src/common src/microstructure)
+
+# Week 8: Micro-Price, VPIN & Avellaneda-Stoikov Benchmark
+add_executable(MicrostructureBenchmark benchmark/MicrostructureBenchmark.cpp)
+target_include_directories(MicrostructureBenchmark PRIVATE src/common src/microstructure)
+
+
