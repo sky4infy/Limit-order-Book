@@ -72,3 +72,13 @@ target_include_directories(HdrHistogramTests PRIVATE src/common)
 add_executable(CoordinatedOmissionBenchmark benchmark/CoordinatedOmissionBenchmark.cpp)
 target_link_libraries(CoordinatedOmissionBenchmark PRIVATE lob_baseline lob_optimized)
 
+# Week 5: SPSC Ring Buffer & Single-Writer Engine Unit Tests
+add_executable(SpscRingBufferTests test/SpscRingBufferTests.cpp)
+target_link_libraries(SpscRingBufferTests PRIVATE lob_optimized)
+target_include_directories(SpscRingBufferTests PRIVATE src/common src/optimized src/lockfree)
+
+# Week 5: Multi-Threaded Contention vs Single-Writer Benchmark
+add_executable(MultiThreadedContentionBenchmark benchmark/MultiThreadedContentionBenchmark.cpp)
+target_link_libraries(MultiThreadedContentionBenchmark PRIVATE lob_optimized)
+target_include_directories(MultiThreadedContentionBenchmark PRIVATE src/common src/optimized src/lockfree)
+
