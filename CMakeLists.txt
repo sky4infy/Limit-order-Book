@@ -90,3 +90,11 @@ target_include_directories(ProtocolTests PRIVATE src/common src/protocol)
 add_executable(ProtocolBenchmark benchmark/ProtocolBenchmark.cpp)
 target_include_directories(ProtocolBenchmark PRIVATE src/common src/protocol)
 
+# Week 7: Call Auction, Pro-Rata Matching & Advanced Orders Unit Tests
+add_executable(ExchangeMechanicsTests test/ExchangeMechanicsTests.cpp)
+target_include_directories(ExchangeMechanicsTests PRIVATE src/common src/exchange)
+
+# Week 7: Walrasian Cross & FIFO vs Pro-Rata Benchmark
+add_executable(AuctionBenchmark benchmark/AuctionBenchmark.cpp)
+target_include_directories(AuctionBenchmark PRIVATE src/common src/exchange)
+
